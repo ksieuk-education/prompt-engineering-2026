@@ -1,0 +1,364 @@
+{
+  "positive": 15,
+  "negative": 3,
+  "scores": {
+    "prefix": {
+      "top1": 7,
+      "top3": 8,
+      "mrr3": 0.4888888888888889,
+      "empty": 1
+    },
+    "bm25": {
+      "top1": 9,
+      "top3": 14,
+      "mrr3": 0.7444444444444444,
+      "empty": 3
+    }
+  },
+  "queries": [
+    {
+      "query": "Как Фирс понял, что все уехали и дом заперт?",
+      "answerable": true,
+      "prefix": {
+        "rank": 1,
+        "hits": [
+          "garden:1468",
+          "garden:55",
+          "garden:250"
+        ]
+      },
+      "bm25": {
+        "rank": 1,
+        "hits": [
+          "garden:1468",
+          "garden:1448",
+          "garden:1449"
+        ]
+      }
+    },
+    {
+      "query": "Кто поздравляет мебель со столетним юбилеем?",
+      "answerable": true,
+      "prefix": {
+        "rank": 3,
+        "hits": [
+          "garden:129",
+          "garden:249",
+          "garden:276"
+        ]
+      },
+      "bm25": {
+        "rank": null,
+        "hits": [
+          "inspector:1393",
+          "garden:1344",
+          "inspector:1373"
+        ]
+      }
+    },
+    {
+      "query": "Как на аукционе Лопахин перебивал цену Дериганова за сад?",
+      "answerable": true,
+      "prefix": {
+        "rank": null,
+        "hits": [
+          "garden:255",
+          "garden:609",
+          "garden:245"
+        ]
+      },
+      "bm25": {
+        "rank": 2,
+        "hits": [
+          "garden:601",
+          "garden:1138",
+          "garden:253"
+        ]
+      }
+    },
+    {
+      "query": "В какой авторской ремарке слышен отдалённый звук оборвавшейся струны?",
+      "answerable": true,
+      "prefix": {
+        "rank": 1,
+        "hits": [
+          "garden:734",
+          "garden:1478",
+          "garden:1125"
+        ]
+      },
+      "bm25": {
+        "rank": 1,
+        "hits": [
+          "garden:734",
+          "garden:1478",
+          "inspector:39"
+        ]
+      }
+    },
+    {
+      "query": "О чьей шубе беспокоится оставшийся один Фирс?",
+      "answerable": true,
+      "prefix": {
+        "rank": null,
+        "hits": [
+          "garden:55",
+          "garden:90",
+          "garden:168"
+        ]
+      },
+      "bm25": {
+        "rank": 3,
+        "hits": [
+          "dowry:1759",
+          "inspector:640",
+          "garden:1470"
+        ]
+      }
+    },
+    {
+      "query": "Как городничий узнаёт, что проверяющий из Петербурга явится тайно?",
+      "answerable": true,
+      "prefix": {
+        "rank": 1,
+        "hits": [
+          "inspector:6",
+          "inspector:78",
+          "inspector:173"
+        ]
+      },
+      "bm25": {
+        "rank": 1,
+        "hits": [
+          "inspector:6",
+          "inspector:78",
+          "dowry:333"
+        ]
+      }
+    },
+    {
+      "query": "По письму Хлестакова почтмейстер обнаружил ошибку чиновников — где он это объясняет?",
+      "answerable": true,
+      "prefix": {
+        "rank": null,
+        "hits": [
+          "inspector:61",
+          "inspector:634",
+          "inspector:1015"
+        ]
+      },
+      "bm25": {
+        "rank": 2,
+        "hits": [
+          "inspector:1461",
+          "inspector:1462",
+          "inspector:1458"
+        ]
+      }
+    },
+    {
+      "query": "Кто требует явиться к прибывшему в гостиницу чиновнику?",
+      "answerable": true,
+      "prefix": {
+        "rank": 1,
+        "hits": [
+          "inspector:1601",
+          "garden:824",
+          "garden:111"
+        ]
+      },
+      "bm25": {
+        "rank": 1,
+        "hits": [
+          "inspector:1601",
+          "dowry:1615",
+          "dowry:1612"
+        ]
+      }
+    },
+    {
+      "query": "Какова цена арбуза на столе Хлестакова?",
+      "answerable": true,
+      "prefix": {
+        "rank": 1,
+        "hits": [
+          "inspector:663",
+          "inspector:668",
+          "garden:69"
+        ]
+      },
+      "bm25": {
+        "rank": 3,
+        "hits": [
+          "garden:911",
+          "dowry:184",
+          "inspector:663"
+        ]
+      }
+    },
+    {
+      "query": "В каком хвастливом рассказе понадобились десятки тысяч курьеров?",
+      "answerable": true,
+      "prefix": {
+        "rank": null,
+        "hits": [
+          "garden:606",
+          "garden:1137",
+          "garden:1224"
+        ]
+      },
+      "bm25": {
+        "rank": 1,
+        "hits": [
+          "inspector:668",
+          "dowry:967",
+          "dowry:537"
+        ]
+      }
+    },
+    {
+      "query": "Как в конце комедии неподвижная группа замирает почти на полторы минуты?",
+      "answerable": true,
+      "prefix": {
+        "rank": 1,
+        "hits": [
+          "inspector:1605",
+          "garden:80",
+          "garden:99"
+        ]
+      },
+      "bm25": {
+        "rank": 1,
+        "hits": [
+          "inspector:1604",
+          "inspector:1605",
+          "garden:908"
+        ]
+      }
+    },
+    {
+      "query": "Кнуров и Вожеватов решают дело монетой. Где предложено бросить жребий?",
+      "answerable": true,
+      "prefix": {
+        "rank": null,
+        "hits": [
+          "dowry:67",
+          "dowry:1025",
+          "garden:929"
+        ]
+      },
+      "bm25": {
+        "rank": 1,
+        "hits": [
+          "dowry:1573",
+          "dowry:1575",
+          "dowry:1572"
+        ]
+      }
+    },
+    {
+      "query": "Кто напоминает сопернику о купеческом слове после раздела?",
+      "answerable": true,
+      "prefix": {
+        "rank": null,
+        "hits": [
+          "dowry:389",
+          "garden:83",
+          "garden:167"
+        ]
+      },
+      "bm25": {
+        "rank": 2,
+        "hits": [
+          "dowry:1669",
+          "dowry:1581",
+          "garden:784"
+        ]
+      }
+    },
+    {
+      "query": "Где Лариса сравнивает себя с вещью и говорит о хозяине?",
+      "answerable": true,
+      "prefix": {
+        "rank": null,
+        "hits": [
+          "garden:650",
+          "garden:714",
+          "garden:716"
+        ]
+      },
+      "bm25": {
+        "rank": 1,
+        "hits": [
+          "dowry:1729",
+          "dowry:1719",
+          "dowry:1731"
+        ]
+      }
+    },
+    {
+      "query": "Как в поездке Робинзона путаются французская столица и местный трактир?",
+      "answerable": true,
+      "prefix": {
+        "rank": 1,
+        "hits": [
+          "dowry:1554",
+          "inspector:111",
+          "dowry:1550"
+        ]
+      },
+      "bm25": {
+        "rank": 1,
+        "hits": [
+          "dowry:1554",
+          "dowry:1555",
+          "dowry:1551"
+        ]
+      }
+    },
+    {
+      "query": "Фирс пересчитывает кубиты на голографическом спектрометре",
+      "answerable": false,
+      "prefix": {
+        "rank": null,
+        "hits": [
+          "garden:55",
+          "garden:168",
+          "garden:170"
+        ]
+      },
+      "bm25": {
+        "rank": null,
+        "hits": []
+      }
+    },
+    {
+      "query": "Хлестаков программирует токенизатор нейросети",
+      "answerable": false,
+      "prefix": {
+        "rank": null,
+        "hits": [
+          "inspector:119",
+          "inspector:232",
+          "inspector:233"
+        ]
+      },
+      "bm25": {
+        "rank": null,
+        "hits": []
+      }
+    },
+    {
+      "query": "Изотопный криостат и фотолитография",
+      "answerable": false,
+      "prefix": {
+        "rank": null,
+        "hits": []
+      },
+      "bm25": {
+        "rank": null,
+        "hits": []
+      }
+    }
+  ]
+}

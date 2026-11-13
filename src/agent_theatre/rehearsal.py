@@ -1,13 +1,18 @@
 """Проверки черновика до выхода на сцену. Замечания адресуются той же модели."""
 
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from difflib import SequenceMatcher
 
 from .archive import terms
 from .llm import GenerationError, Generator
+from .language import wrong_gender
 from .scenario import Actor
-from .schema import Delivery, Review
+from .schema import Delivery, EditorialCheck, Review
+
+
+class BookCommentRejected(GenerationError):
+    """Актёр не сумел подтвердить свой комментарий и может отказаться от публичной цитаты."""
 
 
 FAMILY_FORMS = {
@@ -40,6 +45,8 @@ NOTES = {
     "clock": "Часы уже обсуждали двое. Оставь этот предмет за кадром. Что объявленное условие делает с конкретным человеком?",
     "aside": "Перенеси описание движения из прямой речи в поле жеста. Вслух оставь только слова.",
     "length": "Сократи реплику до двух коротких предложений, жест — до одного движения.",
+    "gender": "Согласуй род слов о себе и адресате с карточками ролей.",
+    "unfinished": "Мысль оборвалась. Произнеси законченное короткое предложение с точкой или вопросительным знаком.",
 }
 
 
@@ -48,9 +55,16 @@ def mentions_clock(line: str) -> bool:
 
 
 def draft_issues(words: Delivery, actor: Actor, prior: list[str], staying: bool,
-                 clock_discussed: bool = False) -> list[str]:
+                 clock_discussed: bool = False, partners: Sequence[Actor] = (),
+                 addressee: Actor | None = None) -> list[str]:
     """Узкие признаки для переигровки, а не оценка литературного качества."""
     issues = []
+    if wrong_gender(words.line, actor, partners, addressee):
+        issues.append("gender")
+    ending = words.line.rstrip('»"”’*) ')
+    dangling = r"\b(?:если|чтобы|потому что|но|и|что я|если (?:вы собираетесь|ты собираешься))[.!?…]+$"
+    if not ending.endswith((".", "?", "!", "…")) or re.search(dangling, ending, re.I):
+        issues.append("unfinished")
     # Упоминание чужих родителей или цитирование партнёра само по себе допустимо.
     unquoted = re.sub(r'«[^»]*»|"[^"]*"', " ", words.line)
     for claim in FAMILY_CLAIM.finditer(unquoted):
@@ -80,22 +94,40 @@ def draft_issues(words: Delivery, actor: Actor, prior: list[str], staying: bool,
 def deliver(gen: Generator, model: str, role: str, prompt: str, actor: Actor,
             prior: list[str], staying: bool, clock_discussed: bool, record: Callable[[dict], None],
             *, review: Callable[[Delivery], Review] | None = None,
-            repair_prompt: str | None = None) -> tuple[Delivery, bool, list[str]]:
+            repair_prompt: str | None = None, partners: Sequence[Actor] = (),
+            addressee: Actor | None = None, addressed_line: str = "",
+            shorten: Callable[[Delivery], Delivery] | None = None) -> tuple[Delivery, bool, list[str]]:
     correction = ""
     for take in range(1, 4):
         words = gen.ask(model, role, prompt + correction, Delivery, budget=340)
-        issues = draft_issues(words, actor, prior, staying, clock_discussed)
+        # Некоторые модели дословно печатают всю входную реплику перед своим ответом.
+        if len(addressed_line.split()) >= 4 and words.line.startswith(addressed_line):
+            own = words.line[len(addressed_line):].lstrip(" \n—")
+            if own:
+                words = words.model_copy(update={"line": own})
+        if len(words.stage.split()) > 12:
+            words = words.model_copy(update={"stage": ""})
+        if shorten:
+            brief = shorten(words)
+            if words.line != brief.line:
+                record({"take": take, "line": words.line, "stage": words.stage, "shortened_to": brief.line,
+                        "issues": ["book_length"], "note": "Для чтения выбрано полное предложение из дубля."})
+                words = brief
+        issues = draft_issues(words, actor, prior, staying, clock_discussed, partners, addressee)
         note = ""
         if review and (not issues or take > 1):
             verdict = review(words)
             if verdict.issue:
                 issues.append(verdict.issue)
                 note = verdict.note
-        hard = bool({"family", "vote", "biography", "ballot", "evidence"} & set(issues))
-        if not issues or (take >= 2 and not hard):
+        hard = bool({"family", "vote", "biography", "ballot", "evidence", "gender", "unfinished", "book"} & set(issues))
+        disputed = bool({"logic", "reply"} & set(issues))
+        if not issues or (take >= 2 and not hard and (not disputed or take == 3)):
             return words, take > 1, issues
         record({"take": take, "line": words.line, "stage": words.stage, "issues": issues, "note": note})
         if take == 3:
+            if "book" in issues:
+                raise BookCommentRejected(note)
             raise GenerationError(f"{actor.name}: после трёх дублей остаётся замечание {', '.join(issues)}")
         if hard and repair_prompt:
             # Повтор забракованного анекдота в подсказке закреплял его у малой модели.
@@ -106,8 +138,12 @@ def deliver(gen: Generator, model: str, role: str, prompt: str, actor: Actor,
                 "biography": "Используй только дословно подтверждаемую личную деталь из карточки роли. Можно прямо отказаться предъявлять воспоминание.",
                 "evidence": "Скажи лишь то, что действительно установлено. Следующий шаг сформулируй как предложение или вопрос.",
                 "ballot": "Выскажи одну причину уже принятого решения и назови его цену лично для тебя.",
+                "reply": "Ответь на конкретный вопрос партнёра одной фразой. Можно признать незнание или несогласие.",
+                "logic": "Исправь противоречие с уже сказанным. Объясни, что в словах партнёра меняет твой выбор.",
             }
             correction = "\n" + "\n".join(hints.get(issue, NOTES.get(issue, "")) for issue in issues)
+            if note and any(issue in {"reply", "logic", "ballot", "book"} for issue in issues):
+                correction += "\nУточнение редактора: " + note
             if take == 2:
                 correction += "\nОставь только одно простое предложение, которое можно обосновать карточкой."
             continue
@@ -120,19 +156,36 @@ def deliver(gen: Generator, model: str, role: str, prompt: str, actor: Actor,
 
 
 def review_line(gen: Generator, editor: str, actor: Actor, context: str, cue: str,
-                words: Delivery) -> Review:
-    system = ("Ты редактор пьесы. Проверяй только произнесённый текст. Допускай юмор, гипотезы, "
-              "спор, чувства и перемену мнения. Возвращай одну обоснованную поправку. "
-              "При отсутствии явного нарушения оставь issue и note пустыми.")
-    return gen.ask(editor, system,
-        f"Роль: {actor.name}. Известная биография: {actor.stake}\n"
-        f"Условия и разговор на сцене:\n{context}\nМизансцена и выбор актёра: {cue}\n"
-        f"Проверяемая реплика: «{words.line}».\n"
-        "biography — герой добавил конкретное личное событие, место, занятие или родственника, "
-        "которых нет в известной биографии. evidence — герой объявил новым измеренным фактом то, "
-        "чего прибор не сообщал, или исказил текст полученной карточки. ballot — актёр призывает "
-        "к решению, несовместимому с собственным голосом. echo — просто повторил предыдущие слова "
-        "без ответа или нового шага. Выбирай категорию только при явной ошибке. "
-        "В поправке напиши по-русски одну короткую инструкцию. Назови лишнюю деталь и опору в сцене. "
-        "Не сочиняй за него реплику. Если он неточно цитирует другого героя, не выдавай эту цитату за факт.",
-        Review, choices={"issue": ["", "biography", "evidence", "ballot", "echo"]}, budget=420)
+                words: Delivery, *, addressed_line: str, final: bool) -> Review:
+    categories = ["ok", "biography", "evidence"]
+    if addressed_line:
+        categories.extend(["logic", "echo"])
+        if "?" in addressed_line:
+            categories.append("reply")
+    if final:
+        categories.append("ballot")
+    verdict = gen.ask(editor,
+        "Ты принимаешь актёрские дубли. По умолчанию ставь ok. Менять дубль стоит только при "
+        "конкретной ошибке. Персонажи вправе спорить, строить гипотезы, шутить и задавать встречные вопросы.",
+        f"Роль: {actor.name}. Биография: {actor.stake}\nСцена и известные записи:\n{context}\n"
+        f"Выбор актёра: {cue}\nСлова, на которые отвечаем: {addressed_line or '(сцену только открыли)'}\n"
+        f"Оцени только эту прямую речь: «{words.line}».\n"
+        "ok — принять. biography — новое неподтверждённое конкретное событие личного прошлого. "
+        "evidence — объявлено фактом измерение, которого в сцене не было. logic — явное "
+        "противоречие с конкретным утверждением или приписывание партнёру чужих слов. "
+        "reply — прямой вопрос проигнорирован. Признание незнания и уточнение по теме допустимы. "
+        "echo — дословный повтор без развития. ballot — призыв, противоположный принятому голосу. "
+        "При ok оставь excerpt, anchor и note пустыми. При ошибке в excerpt дословно скопируй "
+        "проблемные слова актёра, в anchor — точную цитату вопроса, условия или голоса. "
+        "В note коротко укажи, что исправить. Не оценивай жест и литературный вкус.",
+        EditorialCheck, choices={"issue": categories}, budget=390)
+    def normalize(value: str) -> str:
+        return " ".join(value.casefold().replace("ё", "е").strip(' «»"').split())
+    excerpt = normalize(verdict.excerpt)
+    reference = normalize(verdict.anchor)
+    source = addressed_line if verdict.issue == "reply" else context + "\n" + cue
+    if (verdict.issue == "ok" or not excerpt or excerpt not in normalize(words.line)
+            or (verdict.issue in {"reply", "logic", "ballot"}
+                and (not reference or reference not in normalize(source)))):
+        return Review(issue="", note="")
+    return Review(issue=verdict.issue, note=verdict.note)

@@ -112,3 +112,36 @@ def test_semantic_editor_can_send_an_unlisted_memory_back_to_the_same_actor():
                                       [], False, False, records.append, review=review, repair_prompt="Чистый лист")
     assert edited and "решили за меня" in line.line and remaining == []
     assert records[0]["issues"] == ["biography"] and "о Париже" in records[0]["note"]
+
+
+def test_editor_must_ground_a_contradiction_in_words_actually_spoken():
+    from agent_theatre.rehearsal import review_line
+    from agent_theatre.schema import EditorialCheck
+
+    class Editor:
+        def __init__(self, quote):
+            self.quote = quote
+
+        def ask(self, model, system, prompt, form, *, choices, budget):
+            assert form is EditorialCheck and "reply" in choices["issue"]
+            return EditorialCheck(issue="logic", excerpt="ты выбрал Барби", anchor=self.quote, note="Сверь имя.")
+
+    partner = "Я выбрал себя. Что скажешь?"
+    response = Delivery(line="Значит, ты выбрал Барби.", stage="")
+    def check(quote):
+        return review_line(Editor(quote), "m", EXTRA.cast["tony"], partner, "", response,
+                           addressed_line=partner, final=False)
+    assert check("Я выбрал себя").issue == "logic"
+    assert check("Я выбрал Гермиону").issue == ""
+
+
+def test_verbatim_input_echo_is_removed_before_grammar_check():
+    prompt = "Я не уверен, что это протокол."
+
+    class Echoing:
+        def ask(self, *args, **kwargs):
+            return Delivery(line=prompt + " Кто оставил строку пустой?", stage="")
+
+    words, edited, _ = deliver(Echoing(), "m", "роль", "ход", EXTRA.cast["hermione"], [], False,
+                               False, lambda _: None, addressed_line=prompt)
+    assert words.line == "Кто оставил строку пустой?" and not edited

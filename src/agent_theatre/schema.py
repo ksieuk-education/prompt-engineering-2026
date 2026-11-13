@@ -1,4 +1,5 @@
 import re
+from dataclasses import dataclass
 from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator
@@ -48,6 +49,12 @@ class Lookup(Form):
     query: str
 
 
+class ToolCall(Form):
+    action: str
+    query: str = Field(description="Ключевые слова для архива или поиска по репликам. Можно оставить пустым.")
+    supporters: int = Field(ge=1, le=4, description="Число сторонников в мысленном эксперименте, иначе 1.")
+
+
 class Intention(Form):
     intent: Text
     to: str
@@ -59,6 +66,13 @@ class Review(Form):
     model_config = ConfigDict(populate_by_name=True)
     issue: str = Field(description="Категория одной существенной ошибки, либо пустая строка.")
     note: str = Field(alias="поправка", description="Короткая инструкция актёру на русском языке.")
+
+
+class EditorialCheck(Form):
+    issue: str
+    excerpt: str = Field(description="Точные слова проверяемого актёра, пусто при ok.")
+    anchor: str = Field(description="Дословный фрагмент вопроса или факта, с которым возникло противоречие.")
+    note: str = Field(description="Одна поправка актёру, пусто при ok.")
 
 
 def stage_text_issue(value: str) -> str | None:
@@ -97,3 +111,11 @@ class Speech(Delivery):
     vote: str
     edited: bool = False
     quality_issues: list[str] = Field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class Turn:
+    actor: str
+    scene: int
+    speech: Speech
+    index: int = 0

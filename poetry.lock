@@ -227,6 +227,18 @@ files = [
 test = ["pytest"]
 
 [[package]]
+name = "dawg2-python"
+version = "0.9.0"
+description = "Pure-python reader for DAWGs (DAFSAs) created by dawgdic C++ library or DAWG Python extension."
+optional = false
+python-versions = "<4.0,>=3.8"
+groups = ["main"]
+files = [
+    {file = "dawg2_python-0.9.0-py3-none-any.whl", hash = "sha256:4fab6fc097bd176cd783cd8421b757348ea5a460789e53b0f6bb64831380bab5"},
+    {file = "dawg2_python-0.9.0.tar.gz", hash = "sha256:adea0312acd1a958659e8448ce6899046c0858d0b6c8949a51eebdeb5a113e4a"},
+]
+
+[[package]]
 name = "debugpy"
 version = "1.8.22"
 description = "An implementation of the Debug Adapter Protocol for Python"
@@ -1565,6 +1577,39 @@ files = [
 windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
+name = "pymorphy3"
+version = "2.0.6"
+description = "Morphological analyzer (POS tagger + inflection engine) for Russian language."
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "pymorphy3-2.0.6-py3-none-any.whl", hash = "sha256:0254317c02ce3ea17e080b7fc9d675e44662b3a5296bae68605b7a41d25b36c3"},
+    {file = "pymorphy3-2.0.6.tar.gz", hash = "sha256:1603df3bc9e116967c990607f5b97d42fb1c572d6839b851af3501e51d7f5493"},
+]
+
+[package.dependencies]
+dawg2-python = ">=0.8.0"
+pymorphy3-dicts-ru = "*"
+setuptools = {version = ">=68.2.2", markers = "python_version >= \"3.12\""}
+
+[package.extras]
+cli = ["click"]
+fast = ["DAWG2 (>=0.9.0,<1.0.0) ; platform_python_implementation == \"CPython\""]
+
+[[package]]
+name = "pymorphy3-dicts-ru"
+version = "2.4.417150.4580142"
+description = "Russian dictionaries for pymorphy2"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "pymorphy3-dicts-ru-2.4.417150.4580142.tar.gz", hash = "sha256:39ab379d4ca905bafed50f5afc3a3de6f9643605776fbcabc4d3088d4ed382b0"},
+    {file = "pymorphy3_dicts_ru-2.4.417150.4580142-py2.py3-none-any.whl", hash = "sha256:718bac64c73c10c16073a199402657283d9b64c04188b694f6d3e9b0d85440f4"},
+]
+
+[[package]]
 name = "pytest"
 version = "9.2.0"
 description = "pytest: simple powerful testing with Python"
@@ -1867,12 +1912,12 @@ version = "84.2.1"
 description = "Most extensible Python build backend with support for C/C++ extension modules"
 optional = false
 python-versions = ">=3.10"
-groups = ["audio"]
-markers = "python_version < \"3.15\" and python_version >= \"3.12\""
+groups = ["main", "audio"]
 files = [
     {file = "setuptools-84.2.1-py3-none-any.whl", hash = "sha256:ca140b45d5325a9478f880e351484f62fef15f336462e449ca0c03c873d589c2"},
     {file = "setuptools-84.2.1.tar.gz", hash = "sha256:3ff8b3b5492a0aa66960f4419365a86b84e013070d4313e4d4a6894f5d64d6bc"},
 ]
+markers = {main = "python_version >= \"3.12\"", audio = "python_version < \"3.15\" and python_version >= \"3.12\""}
 
 [package.extras]
 check = ["pytest-checkdocs (>=2.14)", "pytest-ruff (>=0.2.1) ; sys_platform != \"cygwin\"", "ruff (>=0.13.0) ; sys_platform != \"cygwin\""]
@@ -2172,4 +2217,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0"
-content-hash = "f02397740677bc6be9d2025dcf66ce2f4f4b99201838cf09ea6bafe2483f227f"
+content-hash = "36b5da362d5d237a91c1a8e459e85068119c2de20d425f5f3dcf7e1f99f49676"

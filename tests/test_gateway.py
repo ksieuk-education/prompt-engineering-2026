@@ -4,9 +4,9 @@ import httpx
 import pytest
 
 from agent_theatre.engine import make_plan
-from agent_theatre.llm import Gateway, GenerationError
+from agent_theatre.llm import Gateway, GenerationError, parse_spoken_take
 from agent_theatre.scenario import load_scenario
-from agent_theatre.schema import Lookup, ScenePlan
+from agent_theatre.schema import Delivery, Lookup, ScenePlan
 
 
 def test_ollama_retries_truncation_and_returns_only_spoken_content():
@@ -78,3 +78,24 @@ def test_local_gpt_gets_a_reasoning_budget_and_returns_the_final_json():
     with httpx.Client(transport=httpx.MockTransport(reply)) as http:
         answer = Gateway(http, "http://localhost", 404).ask("gpt-oss:20b", "роль", "поищи", Lookup, budget=100)
     assert answer.query == "память"
+
+
+def test_spoken_delivery_keeps_the_words_and_retries_a_second_speaker():
+    attempts = []
+    def reply(request):
+        data = json.loads(request.content)
+        assert "format" not in data
+        attempts.append(data)
+        lines = ("Я тебя слышу.\nБарби: Ты уверен?" if len(attempts) == 1
+                 else "*Опускает руку.*\n— Я тебя слышу. А ты согласна рискнуть?")
+        return httpx.Response(200, json={"message": {"content": lines}})
+    with httpx.Client(transport=httpx.MockTransport(reply)) as http:
+        delivery = Gateway(http, "http://localhost", 17).ask("actor", "роль", "сыграй", Delivery)
+    assert delivery.line == "Я тебя слышу. А ты согласна рискнуть?"
+    assert delivery.stage == "Опускает руку." and len(attempts) == 2
+
+
+def test_inline_motion_is_narrated_but_spoken_emphasis_stays():
+    words = parse_spoken_take("Это *мой* выбор. *Опускает руку.* Я согласна.")
+    assert words.line == "Это *мой* выбор. Я согласна."
+    assert words.stage == "Опускает руку."

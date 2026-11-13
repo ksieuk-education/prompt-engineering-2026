@@ -7,7 +7,10 @@ from pathlib import Path
 
 import httpx
 
+from .book_scene import citation_intro, printed_quote
 from .engine import perform
+from .evidence import dossier
+from .library import Library
 from .llm import DEFAULT_A, DEFAULT_B, Gateway, GenerationError
 from .scenario import SCENARIOS, load_scenario
 from .schema import Plan
@@ -34,8 +37,14 @@ def markdown(title: str, events: list[dict]) -> str:
     for e in events:
         if e["event"] == "scene":
             lines.extend([f"## Сцена {e['scene']}. {e['title']}", "", f"*{e['opening']}*", ""])
+            if e.get("action"):
+                lines.extend([f"*{e['action']}*", ""])
             if e["notice"]:
                 lines.extend([f"**Табло.** {e['notice']}", ""])
+        elif e["event"] == "citation":
+            card = e["card"]
+            lines.extend([f"*{citation_intro(e)}*", "", f"> {printed_quote(card)}", "",
+                          f"[Отрывок в издании]({card['url']})", ""])
         elif e["event"] == "turn":
             if e["stage"]:
                 lines.extend([f"*{e['stage']}*", ""])
@@ -55,7 +64,10 @@ def main(argv: list[str] | None = None) -> int:
     planning = parser.add_mutually_exclusive_group()
     planning.add_argument("--planner", help="по умолчанию model-a; для GPT укажите openai/ID")
     planning.add_argument("--plan-from", type=Path, help="папка прежнего прогона этой пьесы, чей план сыграть заново")
-    parser.add_argument("--editor", help="модель для смысловой проверки каждого черновика")
+    editing = parser.add_mutually_exclusive_group()
+    editing.add_argument("--editor", help="модель для смысловой проверки черновика (по умолчанию model-a)")
+    editing.add_argument("--no-editor", action="store_true", help="оставить только проверки Python")
+    parser.add_argument("--no-library", action="store_true", help="контрольная постановка без чтения больших пьес")
     parser.add_argument("--ollama-url", default=os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434"))
     parser.add_argument("--turns", type=int, choices=range(4, 11), default=6,
                         help="ходов в каждой из первых трёх сцен, в финале всегда четыре")
@@ -73,6 +85,8 @@ def main(argv: list[str] | None = None) -> int:
         except ValueError as exc:
             parser.error(str(exc))
     models = {key: (args.model_a, args.model_b)[i % 2] for i, key in enumerate(story.cast)}
+    editor = None if args.no_editor else args.editor or args.model_a
+    library = None if args.no_library else Library()
     out = args.out or Path("runs") / f"{story.key}-{datetime.now():%Y%m%d-%H%M%S-%f}"
     try:
         out.mkdir(parents=True, exist_ok=False)
@@ -93,16 +107,21 @@ def main(argv: list[str] | None = None) -> int:
 
         emit({"event": "start", "scenario": story.key, "seed": args.seed,
               "models": models, "planner": planner, "turns_per_scene": args.turns,
-              "plan_from": str(args.plan_from) if args.plan_from else None, "editor": args.editor})
+              "library_revision": library.revision if library else None,
+              "cast": {key: {"name": a.name, "gender": a.gender, "speaker": a.speaker}
+                       for key, a in story.cast.items()},
+              "plan_from": str(args.plan_from) if args.plan_from else None, "editor": editor})
         with httpx.Client(timeout=httpx.Timeout(180, connect=10)) as http:
             try:
                 perform(story, Gateway(http, url, args.seed), models, planner, args.turns, emit,
-                        plan=plan, editor=args.editor)
+                        plan=plan, editor=editor, library=library)
             except GenerationError as exc:
                 emit({"event": "error", "message": str(exc)})
                 print(f"Прогон прерван. Журнал: {out}\n{exc}", file=sys.stderr)
                 return 1
     (out / "play.md").write_text(markdown(story.title, events), encoding="utf-8")
+    if library:
+        (out / "dossier.md").write_text(dossier(events, library), encoding="utf-8")
     print(f"Готово: {out / 'play.md'}")
     return 0
 

@@ -1,0 +1,28 @@
+{
+  "revision": "cb06b3a211cc36ed0806c9ae85a94ede5da99557",
+  "repository": "https://github.com/dracor-org/rusdracor",
+  "license": "CC0-1.0",
+  "works": [
+    {
+      "key": "garden",
+      "author": "А. П. Чехов",
+      "title": "Вишнёвый сад",
+      "file": "chekhov-vishnevyi-sad.xml",
+      "sha256": "baf1eaa7406a24ce709b0d3f2b9b320f144ecda887dc4a8e1b42ace4d0be1e5d"
+    },
+    {
+      "key": "inspector",
+      "author": "Н. В. Гоголь",
+      "title": "Ревизор",
+      "file": "gogol-revizor.xml",
+      "sha256": "6a718689e4d0242151e14082477a8db0f085237c807fd5e9b07cd565fa8a0d39"
+    },
+    {
+      "key": "dowry",
+      "author": "А. Н. Островский",
+      "title": "Бесприданница",
+      "file": "ostrovsky-bespridannitsa.xml",
+      "sha256": "ceaf072a5b4a560aba9d1bc2e0817ac46cfe4c3515d6c65af081307b071144f1"
+    }
+  ]
+}

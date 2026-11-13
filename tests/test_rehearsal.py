@@ -7,7 +7,7 @@ from agent_theatre.archive import Archive
 from agent_theatre.cli import markdown
 from agent_theatre.engine import Turn, ballot_phrase, choose_speaker, named_addressee, perform, resolve
 from agent_theatre.scenario import SCENARIOS, load_scenario
-from agent_theatre.schema import Delivery, Intention, Lookup, Plan, ScenePlan, Speech
+from agent_theatre.schema import Delivery, Intention, Plan, ScenePlan, Speech, ToolCall
 
 
 class RehearsalModel:
@@ -17,13 +17,14 @@ class RehearsalModel:
         if form is Plan:
             return Plan(scenes=[ScenePlan(title=str(n), opening="Вспышка.", objective="Спор.")
                                 for n in range(4)])
-        if form is Lookup:
-            return Lookup(query="проверка протокол кнопка ограничение")
+        if form is ToolCall:
+            action = "search_archive" if "search_archive" in choices["action"] else ""
+            return ToolCall(action=action, query="проверка протокол кнопка ограничение", supporters=1)
         if form is Intention:
             return Intention(intent="Уточнить условия", to=choices["to"][-1],
                              source=choices["source"][-1], vote=choices["vote"][0])
         assert form is Delivery and ".txt" not in prompt
-        return Delivery(line="Я прочла условия.", stage="")
+        return Delivery(line="Я помню условия.", stage="")
 
 
 @pytest.mark.parametrize("key", SCENARIOS)

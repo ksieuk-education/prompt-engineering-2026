@@ -4,11 +4,13 @@ version = "0.1.0"
 description = "Агентский театр: четыре актёра и один общий выбор"
 requires-python = ">=3.11,<4.0"
 readme = "README.md"
-dependencies = ["httpx>=0.27,<1", "pydantic>=2.9,<3"]
+dependencies = ["httpx>=0.27,<1", "pydantic>=2.9,<3", "pymorphy3>=2.0,<3"]
 
 [project.scripts]
 theatre = "agent_theatre.cli:main"
+theatre-library = "agent_theatre.library_cli:main"
 theatre-audio = "agent_theatre.audio:main"
+theatre-reading = "agent_theatre.reading:main"
 
 [tool.poetry]
 packages = [{ include = "agent_theatre", from = "src" }]
